@@ -1,0 +1,75 @@
+version: '3.1'
+
+services:
+  web:
+    build: 
+      context: .
+    restart: always
+    command: >
+       sh -c "python manage.py runserver 0.0.0.0:8000"
+    command: sh init.sh
+
+    environment:
+      - DB_HOSTS=mongodb
+    volumes:
+      -  ./src:/src
+    ports:
+      - 8000:8000
+    depends_on:
+      - replSetInitiate
+    networks:
+      - app-network
+
+
+  mongo1:
+    image: mongo:3.4
+    #env_file:
+      #k- ./mongo-repl.env
+    ports:
+      - "27018:27017"
+    command: mongod  --replSet apprepl
+    networks:
+      - app-network
+
+  replSetInitiate:
+    image: mongo:3.4
+    env_file:
+      - ./mongo-repl.env
+    volumes:
+      - .:/scripts
+    command: sh scripts/mongo-repl.env
+    depends_on:
+      - mongo1
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
+
+  # mongodb:
+  #   image: mongo:latest
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: mongoadmin
+  #     MONGO_INITDB_DATABASE: coffe_mongodb
+
+
+    # ports:
+    #   - '27017:27017'
+
+  # mongo-express:
+  #   image: mongo-express
+  #   environment:
+  #       - ME_CONFIG_MONGODB_SERVER=mongo
+  #       - ME_CONFIG_MONGODB_PORT=27017
+  #       - ME_CONFIG_MONGODB_ENABLE_ADMIN=false
+  #       - ME_CONFIG_MONGODB_AUTH_DATABASE=root
+  #       - ME_CONFIG_MONGODB_AUTH_USERNAME=root
+  #       - ME_CONFIG_MONGODB_AUTH_PASSWORD=mongoadmin
+  #       - ME_CONFIG_BASICAUTH_USERNAME=root
+  #       - ME_CONFIG_BASICAUTH_PASSWORD=mongoadmin
+  #   depends_on:
+  #       - mongodb
+  #   ports:
+  #       - "8888:8081"
